@@ -1,5 +1,5 @@
 # Use the official Node.js image from the Docker Hub
-FROM node:14
+FROM node:lts
 
 # Create and change to the app directory
 WORKDIR /usr/src/app
