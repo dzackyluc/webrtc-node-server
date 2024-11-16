@@ -78,7 +78,7 @@ io.on("connection", (socket) => {
   socket.on("offer", (offer, roomId, targetId, isMuted, isVideoOn) => {
     if (
       socket.request.roomInfo?.actualStartTime &&
-      new Date(socket.request.roomInfo?.actualStartTime) > new Date()
+      new Date(socket.request.roomInfo?.actualStartTime) < new Date()
     ) {
       console.log("Offer received");
       socket
@@ -98,7 +98,7 @@ io.on("connection", (socket) => {
     console.log("Answer received");
     if (
       socket.request.roomInfo?.actualStartTime &&
-      new Date(socket.request.roomInfo?.actualStartTime) > new Date()
+      new Date(socket.request.roomInfo?.actualStartTime) < new Date()
     ) {
       socket.to(targetId).emit("answer", answer, socket.id, isMuted, isVideoOn);
     }
