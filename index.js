@@ -30,7 +30,7 @@ io.on("connection", (socket) => {
     new Date()
   );
 
-  socket.on("join-room", async () => {
+  socket.on("join-room", async (sanctumToken, bookingId) => {
     console.log("User joined room");
 
     const { roomId, userId } = socket.request.roomInfo;
@@ -50,6 +50,24 @@ io.on("connection", (socket) => {
     // Notify others in the room
     socket.to(roomId).emit("user-connected", socket.id, userId);
 
+    fetch(
+      `https://api.temanternak.h14.my.id/bookings/${bookingId}/consultation/attendee`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + sanctumToken,
+        },
+      }
+    )
+      .then((res) => {
+        res.json().then((data) => {
+          console.log(data);
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+      });
     // Send list of existing participants to the new user
     const participants = Array.from(rooms.get(roomId)).filter(
       (id) => id !== socket.id
@@ -58,22 +76,32 @@ io.on("connection", (socket) => {
   });
 
   socket.on("offer", (offer, roomId, targetId, isMuted, isVideoOn) => {
-    console.log("Offer received");
-    socket
-      .to(targetId)
-      .emit(
-        "offer",
-        offer,
-        socket.id,
-        socket.request.roomInfo.userId,
-        isMuted,
-        isVideoOn
-      );
+    if (
+      socket.request.roomInfo?.actualStartTime &&
+      new Date(socket.request.roomInfo?.actualStartTime) > new Date()
+    ) {
+      console.log("Offer received");
+      socket
+        .to(targetId)
+        .emit(
+          "offer",
+          offer,
+          socket.id,
+          socket.request.roomInfo.userId,
+          isMuted,
+          isVideoOn
+        );
+    }
   });
 
   socket.on("answer", (answer, roomId, targetId, isMuted, isVideoOn) => {
     console.log("Answer received");
-    socket.to(targetId).emit("answer", answer, socket.id, isMuted, isVideoOn);
+    if (
+      socket.request.roomInfo?.actualStartTime &&
+      new Date(socket.request.roomInfo?.actualStartTime) > new Date()
+    ) {
+      socket.to(targetId).emit("answer", answer, socket.id, isMuted, isVideoOn);
+    }
   });
 
   socket.on("ice-candidate", (candidate, roomId, targetId) => {
