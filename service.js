@@ -14,9 +14,7 @@ class MongoDBService {
     async connect() {
         try {
             await this.client.connect();
-            await this.client
-                .db(process.env.DATABASE_NAME ?? "temanternak-prod")
-                .command({ ping: 1 });
+            await this.client.db("temanternak-prod").command({ ping: 1 });
             console.log(
                 "Pinged your deployment. You successfully connected to MongoDB!"
             );
@@ -33,10 +31,10 @@ class MongoDBService {
         }
     }
 
-    async updateConsultation(consultationId, userId, state, time) {
+    async updateCallLogs(consultationId, userId, state, time) {
         try {
             const result = await this.client
-                .db(process.env.DATABASE_NAME ?? "temanternak-prod")
+                .db("temanternak-prod")
                 .collection("consultations")
                 .updateOne(
                     { _id: ObjectId.createFromHexString(consultationId) },
@@ -49,6 +47,40 @@ class MongoDBService {
             return result;
         } catch (error) {
             console.error("Failed to update consultation", error);
+        }
+    }
+    async updateChatLogs(consultationId, message) {
+        try {
+            const result = await this.client
+                .db("temanternak-prod")
+                .collection("consultations")
+                .updateOne(
+                    { _id: ObjectId.createFromHexString(consultationId) },
+                    {
+                        $push: {
+                            chat_logs: message,
+                        },
+                    }
+                );
+            return result;
+        } catch (error) {
+            console.error("Failed to update consultation", error);
+        }
+    }
+
+    async getChatLogs(consultationId) {
+        try {
+            const consultation = await this.client
+                .db("temanternak-prod")
+                .collection("consultations")
+                .findOne(
+                    { _id: ObjectId.createFromHexString(consultationId) },
+                    { projection: { chat_logs: 1 } }
+                );
+            return consultation?.chat_logs || [];
+        } catch (error) {
+            console.error("Failed to get chat logs", error);
+            return [];
         }
     }
 }
